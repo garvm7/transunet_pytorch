@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 # Additional Scripts
 from utils import transforms as T
-from utils.dataset import DentalDataset
+from utils.dataset import Synapse_dataset
 from utils.utils import EpochCallback
 
 from config import cfg
@@ -26,12 +26,18 @@ class TrainTestPipe:
     def __load_dataset(self, path, train=False):
         shuffle = False
         transform = False
+        split = "test"
 
         if train:
             shuffle = True
             transform = transforms.Compose([T.RandomAugmentation(2)])
+            split = "train"
 
-        set = DentalDataset(path, transform)
+        # set = Synapse_dataset(path, transform)
+        base_dir = '/content/synapse'
+        list_dir = '/content/lists/lists_Synapse'
+        
+        set = Synapse_dataset(base_dir, list_dir, split, transform)
         loader = DataLoader(set, batch_size=cfg.batch_size, shuffle=shuffle)
 
         return loader
