@@ -134,8 +134,8 @@ class ViT(nn.Module):
 
 
 if __name__ == '__main__':
-    vit = ViT(img_dim=128,
-              in_channels=3,
+    vit = ViT(img_dim=512,
+              in_channels=1,
               patch_dim=16,
               embedding_dim=512,
               block_num=6,
