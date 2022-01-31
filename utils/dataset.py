@@ -1,86 +1,75 @@
 import os
-import cv2
+import random
+import h5py
 import numpy as np
 import torch
+from scipy import ndimage
+from scipy.ndimage.interpolation import zoom
 from torch.utils.data import Dataset
 
-# Additional Scripts
-from config import cfg
+
+def random_rot_flip(image, label):
+    k = np.random.randint(0, 4)
+    image = np.rot90(image, k)
+    label = np.rot90(label, k)
+    axis = np.random.randint(0, 2)
+    image = np.flip(image, axis=axis).copy()
+    label = np.flip(label, axis=axis).copy()
+    return image, label
 
 
-class DentalDataset(Dataset):
-    output_size = cfg.transunet.img_dim
+def random_rotate(image, label):
+    angle = np.random.randint(-20, 20)
+    image = ndimage.rotate(image, angle, order=0, reshape=False)
+    label = ndimage.rotate(label, angle, order=0, reshape=False)
+    return image, label
 
-    def __init__(self, path, transform):
-        super().__init__()
 
-        self.transform = transform
+class RandomGenerator(object):
+    def __init__(self, output_size):
+        self.output_size = output_size
 
-        img_folder = os.path.join(path, 'img')
-        mask_folder = os.path.join(path, 'mask')
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
 
-        self.img_paths = []
-        self.mask_paths = []
-        for p in os.listdir(img_folder):
-            name = p.split('.')[0]
+        if random.random() > 0.5:
+            image, label = random_rot_flip(image, label)
+        elif random.random() > 0.5:
+            image, label = random_rotate(image, label)
+        x, y = image.shape
+        if x != self.output_size[0] or y != self.output_size[1]:
+            image = zoom(image, (self.output_size[0] / x, self.output_size[1] / y), order=3)  # why not 3?
+            label = zoom(label, (self.output_size[0] / x, self.output_size[1] / y), order=0)
+        image = torch.from_numpy(image.astype(np.float32)).unsqueeze(0)
+        label = torch.from_numpy(label.astype(np.float32))
+        sample = {'image': image, 'label': label.long()}
+        return sample
 
-            self.img_paths.append(os.path.join(img_folder, name + '.jpg'))
-            self.mask_paths.append(os.path.join(mask_folder, name + '.bmp'))
 
-    def __getitem__(self, idx):
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
-        img = self.img_paths[idx]
-        mask = self.mask_paths[idx]
-
-        img = cv2.imread(img)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = cv2.resize(img, (self.output_size, self.output_size))
-
-        mask = cv2.imread(mask, 0)
-        mask = cv2.resize(mask, (self.output_size, self.output_size), interpolation=cv2.INTER_NEAREST)
-        mask = np.expand_dims(mask, axis=-1)
-
-        sample = {'img': img, 'mask': mask}
-
-        if self.transform:
-            sample = self.transform(sample)
-
-        img, mask = sample['img'], sample['mask']
-
-        img = img / 255.
-        img = img.transpose((2, 0, 1))
-        img = torch.from_numpy(img.astype('float32'))
-
-        mask = mask / 255.
-        mask = mask.transpose((2, 0, 1))
-        mask = torch.from_numpy(mask.astype('float32'))
-
-        return {'img': img, 'mask': mask}
+class Synapse_dataset(Dataset):
+    def __init__(self, base_dir, list_dir, split, transform=None):
+        self.transform = transform  # using transform in torch!
+        self.split = split
+        self.sample_list = open(os.path.join(list_dir, self.split+'.txt')).readlines()
+        self.data_dir = base_dir
 
     def __len__(self):
-        return len(self.img_paths)
+        return len(self.sample_list)
 
+    def __getitem__(self, idx):
+        if self.split == "train":
+            slice_name = self.sample_list[idx].strip('\n')
+            data_path = os.path.join(self.data_dir, slice_name+'.npz')
+            data = np.load(data_path)
+            image, label = data['image'], data['label']
+        else:
+            vol_name = self.sample_list[idx].strip('\n')
+            filepath = self.data_dir + "/{}.npy.h5".format(vol_name)
+            data = h5py.File(filepath)
+            image, label = data['image'][:], data['label'][:]
 
-if __name__ == '__main__':
-    import torchvision.transforms as transforms
-    from utils import transforms as T
-
-    transform = transforms.Compose([T.BGR2RGB(),
-                                    T.Rescale(cfg.input_size),
-                                    T.RandomAugmentation(2),
-                                    T.Normalize(),
-                                    T.ToTensor()])
-
-    md = DentalDataset('/home/kara/Downloads/UFBA_UESC_DENTAL_IMAGES_DEEP/dataset_and_code/test/set/train',
-                       transform)
-
-    for sample in md:
-        print(sample['img'].shape)
-        print(sample['mask'].shape)
-        '''cv2.imshow('img', sample['img'])
-        cv2.imshow('mask', sample['mask'])
-        cv2.waitKey()'''
-
-        break
+        sample = {'image': image, 'label': label}
+        if self.transform:
+            sample = self.transform(sample)
+        sample['case_name'] = self.sample_list[idx].strip('\n')
+        return sample
