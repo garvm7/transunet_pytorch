@@ -4,11 +4,14 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 
 # Additional Scripts
-from utils import transforms as T
-from utils.dataset import Synapse_dataset
-from utils.utils import EpochCallback
+# from utils import transforms as T
+# from utils.dataset import Synapse_dataset
+# from utils.utils import EpochCallback
+import transforms as T
+from dataset import Synapse_dataset
+from utils import EpochCallback
 
-from config import cfg
+import config as cfg
 
 from train_transunet import TransUNetSeg
 
