@@ -46,7 +46,7 @@ class TrainTestPipe:
         total_loss = 0
 
         for step, data in enumerate(loader):
-            img, mask = data['img'], data['mask']
+            img, mask = data['image'], data['label']
             img = img.to(self.device)
             mask = mask.to(self.device)
 
