@@ -40,7 +40,8 @@ class TrainTestPipe:
         base_dir = '/content/synapse'
         list_dir = '/content/lists/lists_Synapse'
         
-        set = Synapse_dataset(base_dir, list_dir, split, transform)
+        # set = Synapse_dataset(base_dir, list_dir, split, transform)
+        set = Synapse_dataset(base_dir, list_dir, split)
         loader = DataLoader(set, batch_size=cfg.batch_size, shuffle=shuffle)
 
         return loader
