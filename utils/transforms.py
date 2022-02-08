@@ -31,7 +31,7 @@ class RandomAugmentation:
             self.max_augment_count = len(self.augmentations)
 
     def __call__(self, sample):
-        img, mask = sample['img'], sample['mask']
+        img, mask = sample['image'], sample['label']
 
         augmentation_count = random.randint(0, self.max_augment_count)
         selected_augmentations = random.sample(self.augmentations, k=augmentation_count)
