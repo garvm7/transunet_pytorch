@@ -7,7 +7,7 @@ import datetime
 # Additional Scripts
 from train_transunet import TransUNetSeg
 
-from utils.utils import thresh_func
+from utils import thresh_func
 from config import cfg
 
 
