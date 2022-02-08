@@ -11,7 +11,7 @@ import transforms as T
 from dataset import Synapse_dataset
 from utils import EpochCallback
 
-import config as cfg
+from config import cfg
 
 from train_transunet import TransUNetSeg
 
