@@ -2,8 +2,8 @@ import torch
 from torch.optim import SGD
 
 # Additional Scripts
-from utils.transunet import TransUNet
-from utils.utils import dice_loss
+from transunet import TransUNet
+from utils import dice_loss
 from config import cfg
 
 
