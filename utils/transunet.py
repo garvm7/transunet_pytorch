@@ -90,6 +90,7 @@ class Encoder(nn.Module):
         self.norm2 = nn.BatchNorm2d(512)
 
     def forward(self, x):
+        x = x.unsqueeze(1) # remove if needed
         x = self.conv1(x)
         x = self.norm1(x)
         x1 = self.relu(x)
