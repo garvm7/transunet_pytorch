@@ -150,7 +150,7 @@ if __name__ == '__main__':
 
     transunet = TransUNet(img_dim=512,
                           in_channels=1,
-                          out_channels=16,
+                          out_channels=512,
                           head_num=4,
                           mlp_dim=512,
                           block_num=8,
